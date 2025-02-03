@@ -31,28 +31,42 @@ router.post("/register", async (req, res) => {
 });
 
 // Login route
+// Login route
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
+  // Ensure both username and password are provided
+  if (!username || !password) {
+    return res.status(400).json({ message: "Please provide both username and password" });
+  }
+
   try {
+    // Find the user by username
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
 
+    // Compare the provided password with the stored hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET, // Ensure this is set in your .env file
+      { expiresIn: "1h" }
+    );
 
-    res.status(200).json({ token });
+    // Send response with the token
+    res.status(200).json({ message: "Login successful", token });
   } catch (error) {
+    console.error("Error logging in:", error);
     res.status(500).json({ message: "Error logging in user", error });
   }
 });
+
 
 module.exports = router;
